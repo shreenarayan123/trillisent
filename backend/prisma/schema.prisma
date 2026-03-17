@@ -1,0 +1,49 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ScanJob {
+  id             String    @id @default(uuid())
+  target         String
+  scanType       String    @default("quick")
+  status         String    @default("pending") // pending | running | completed | failed
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  errorMessage   String?
+  hosts          Host[]
+
+  @@map("scan_jobs")
+}
+
+model Host {
+  id          String    @id @default(uuid())
+  scanJobId   String
+  ipAddress   String
+  hostname    String?
+  status      String    @default("up")
+  osGuess     String?
+  scanJob     ScanJob   @relation(fields: [scanJobId], references: [id], onDelete: Cascade)
+  openPorts   OpenPort[]
+
+  @@map("hosts")
+}
+
+model OpenPort {
+  id        String  @id @default(uuid())
+  hostId    String
+  port      Int
+  protocol  String  @default("tcp")
+  state     String  @default("open")
+  service   String?
+  version   String?
+  host      Host    @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@map("open_ports")
+}
